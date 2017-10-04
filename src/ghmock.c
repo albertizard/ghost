@@ -113,6 +113,7 @@ void default_params(struct Params *p){
     p->ms_cen_sigmainf = 0.030873590974500001;
     p->ms_cen_sigma1 = 0.55697362786500004;
     p->ms_cen_xi = 4.25;
+    p->ms_cen_delta = 0.000123456;
 
     // Passive fraction parameters
     p->fpass_alpha0 = 10.804369278199999;
@@ -123,12 +124,16 @@ void default_params(struct Params *p){
     // SFMS parameters
     p->sfr_sfms_alpha0 = -0.077393675287999994;
     p->sfr_sfms_alpha1 = 1.07;
-    p->sfr_sfms_beta = 1.0373848138599999;
-    p->sfr_sfms_sigma = 0.39059251672099998;
+    p->sfr_sfms_beta0 = 1.0373848138599999;
+    p->sfr_sfms_beta1 = 0.000123456;
+    p->sfr_sfms_sigma0 = 0.39059251672099998;
+    p->sfr_sfms_sigma1 = 0.000123456;
 
     // Passive sequence parameters
-    p->sfr_pass_mshift = 0.00105527163519;
-    p->sfr_pass_sigma = 0.028559680849299999;
+    p->sfr_pass_mshift0 = 0.00105527163519;
+    p->sfr_pass_mshift1 = 0.000123456;
+    p->sfr_pass_sigma0 = 0.028559680849299999;
+    p->sfr_pass_sigma1 = 0.000123456;
 
     // Optical extinction parameters
     p->extinction_tau0 = 1.040598;
@@ -204,6 +209,7 @@ float draw_mass_stellar_cen(float mhalo, float z, struct Params p, gsl_rng *rng)
     M2 = pow(10., p.ms_cen_logM2);
     sigma = p.ms_cen_sigmainf
           + p.ms_cen_sigma1 * (1. - 2./M_PI*atan(p.ms_cen_xi * log10(mhalo/M2)));
+    sigma *= pow((float)1.0 + z, p.ms_cen_delta);
     sigma *= log(10.); // sigma in dex
 
     // Ensure that sigma is +ve, and larger than the value needed for
@@ -234,7 +240,7 @@ bool draw_galaxy_type(float mstar, float z, struct Params p, gsl_rng *rng){
     Draw galaxy type (passive vs. star-forming).
     */
     float fpass = f_passive(mstar, z, p);
-    
+
     // Draw uniform random number and apply passive cut
     if(gsl_rng_uniform(rng) > fpass){
         return false; // Star-forming
@@ -249,7 +255,7 @@ float sfr_sfms(float mstar, float z, struct Params p){
     Mean SFR of the star-formation main sequence.
     */
     return pow(10., p.sfr_sfms_alpha0 + p.sfr_sfms_alpha1 * z)
-         * pow(mstar/1e10, p.sfr_sfms_beta);
+         * pow(mstar/1e10, p.sfr_sfms_beta0 + p.sfr_sfms_beta1 * z);
 }
 
 
@@ -263,7 +269,7 @@ float draw_sfr_sfms(float mstar, float z, struct Params p, gsl_rng *rng){
     */
     return gsl_ran_lognormal(rng,
                              log( sfr_sfms(mstar, z, p) ),
-                             p.sfr_sfms_sigma * log(10.));
+                             p.sfr_sfms_sigma0 * log(10.) * pow(1. + z, p.sfr_sfms_sigma1));
     /*return np.exp(-np.log(sfr/mean_sfr)**2./(2.*sigma**2.)) \
          / (np.sqrt(2.*np.pi)*sigma*sfr)*/
 }
@@ -276,12 +282,12 @@ float draw_sfr_passive_lognormal(float mstar, float z, struct Params p, gsl_rng 
     // Take the SFMS powerlaw, shift it by some factor, and change scatter
 
     // Sanity check on shift parameter
-    assert(p.sfr_pass_mshift >= 0.);
+    assert(p.sfr_pass_mshift0 + z*p.sfr_pass_mshift1 >= 0.);
 
     // Draw log-normal realisation
     return gsl_ran_lognormal(rng,
-                             log( sfr_sfms(mstar, z, p) * p.sfr_pass_mshift ),
-                             p.sfr_pass_sigma * log(10.)); // sigma in dex
+                             log( sfr_sfms(mstar, z, p) * (p.sfr_pass_mshift0 + z*p.sfr_pass_mshift1) ),
+                             p.sfr_pass_sigma0 * log(10.) * pow(1. + z, p.sfr_pass_sigma1)); // sigma in dex
     /*return np.exp(-0.5 * (np.log(sfr/mean_sfr) / sigma)**2.) \
          / (np.sqrt(2.*np.pi)*sigma*sfr)*/
 }

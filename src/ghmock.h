@@ -30,7 +30,7 @@ extern const char BAND_NAMES[NUM_BANDS];
 
 // Parameters of the model
 struct Params{
-    
+
     // Stellar mass-halo mass relation for centrals
     float ms_cen_logM1;
     float ms_cen_norm;
@@ -44,30 +44,35 @@ struct Params{
     float ms_cen_sigmainf;
     float ms_cen_sigma1;
     float ms_cen_xi;
-    
+    float ms_cen_delta;
+
     // Passive fraction parameters
     float fpass_alpha0;
     float fpass_alpha1;
     float fpass_beta;
     float fpass_zeta;
-    
+
     // SFMS parameters
     float sfr_sfms_alpha0;
     float sfr_sfms_alpha1;
-    float sfr_sfms_beta;
-    float sfr_sfms_sigma;
-    
+    float sfr_sfms_beta0;
+    float sfr_sfms_beta1;
+    float sfr_sfms_sigma0;
+    float sfr_sfms_sigma1;
+
     // Passive sequence parameters
-    float sfr_pass_mshift;
-    float sfr_pass_sigma;
-    
+    float sfr_pass_mshift0;
+    float sfr_pass_mshift1;
+    float sfr_pass_sigma0;
+    float sfr_pass_sigma1;
+
     // Optical extinction parameters
     float extinction_tau0;
     float extinction_beta;
     float extinction_diskfac;
     float extinction_kappa;
     float extinction_lambda0;
-    
+
     // Optical parameters
     float opt_mstar_amp;
     float opt_mstar_c;
@@ -76,9 +81,9 @@ struct Params{
     float opt_cross_beta;
     float opt_cross_gamma;
     float opt_offset[NUM_BANDS];
-    float opt_pdf_sigma[NUM_BANDS]; 
+    float opt_pdf_sigma[NUM_BANDS];
     float opt_pdf_mean[NUM_BANDS];
-    
+
 };
 
 // I/O utility functions
@@ -97,9 +102,9 @@ float draw_sfr_sfms(float mstar, float z, struct Params p, gsl_rng *rng);
 float draw_sfr_passive_lognormal(float mstar, float z, struct Params p, gsl_rng *rng);
 float tau_extinction(float sintheta, float mstar, char band, float z, struct Params p);
 float optical_mag(float sfr, float mstar, char band, float z, struct Params p);
-float draw_optical_mag_intrinsic(float sfr, float mstar, char band, float z, 
+float draw_optical_mag_intrinsic(float sfr, float mstar, char band, float z,
                                   struct Params p, gsl_rng *rng);
-float draw_optical_mag_atten(float mag_int, float mstar, char band, float z, 
+float draw_optical_mag_atten(float mag_int, float mstar, char band, float z,
                               struct Params p, gsl_rng *rng);
 
 // Model realisation code
